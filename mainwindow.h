@@ -16,6 +16,7 @@ public:
     ~MainWindow();
     limpaForm();
     carregaTudo();
+    validaSalvar();
 
 private slots:
     void on_btnSalvar_clicked();
@@ -27,6 +28,10 @@ private slots:
     void on_tvPessoas_activated(const QModelIndex &index);
 
     void on_btnExcluir_clicked();
+
+    void on_rbMasculino_clicked();
+
+    void on_rbFeminino_clicked();
 
 private:
     Ui::MainWindow *ui;

@@ -37,20 +37,29 @@ int MainWindow::limpaForm()
     return 0;
 }
 
+int MainWindow::validaSalvar()
+{
+    if (
+        ui->txtNome->text() == ""
+        || ui->txtEmail->text() == ""
+        || ui->txtIdade->text().toInt() < 0
+        || ui->txtCidade->text() == ""
+        || (!ui->rbMasculino->isChecked() && !ui->rbFeminino->isChecked())
+    ) {
+        QMessageBox messageBox;
+        messageBox.critical(0,"Aviso","Você deve preencher todos os campos!");
+        return 0;
+    }
+
+    return 1;
+}
+
 void MainWindow::on_btnSalvar_clicked()
 {
     int codigo;
-    QString nome;
-    QString email;
-    int  idade;
-    QString cidade;
     QString sexo;
 
     codigo = ui->txtCodigo->text().toInt();
-    nome = ui->txtNome->text();
-    email = ui->txtEmail->text();
-    idade = ui->txtIdade->text().toInt();
-    cidade = ui->txtCidade->text();
 
     if (ui->rbMasculino->isChecked()) {
         sexo = 'm';
@@ -61,15 +70,7 @@ void MainWindow::on_btnSalvar_clicked()
     util::Banco banco;
     banco.conecta();
 
-    if (
-        nome == ""
-        || email == ""
-        || idade < 0
-        || cidade == ""
-    ) {
-        QMessageBox messageBox;
-        messageBox.critical(0,"Aviso","Você deve preencher todos os campos!");
-    } else if(banco.ok) {
+    if(banco.ok && validaSalvar()) {
         QSqlQuery query(banco.db);
 
         if (codigo > 0) {
@@ -97,11 +98,11 @@ void MainWindow::on_btnSalvar_clicked()
                           " )");
         }
 
-        query.bindValue(":nome", nome);
-        query.bindValue(":email", email);
+        query.bindValue(":nome", ui->txtNome->text());
+        query.bindValue(":email", ui->txtEmail->text());
         query.bindValue(":sexo", sexo);
-        query.bindValue(":idade", QString::number(idade));
-        query.bindValue(":cidade", cidade);
+        query.bindValue(":idade", QString::number(ui->txtIdade->text().toInt()));
+        query.bindValue(":cidade", ui->txtCidade->text());
 
         if (query.exec()) {
             QMessageBox messageBox;
@@ -130,7 +131,7 @@ void MainWindow::on_btnSalvar_clicked()
             messageBox.setStandardButtons(QMessageBox::Ok);
             messageBox.exec();
         }
-    } else {
+    } else if(!banco.ok) {
         QMessageBox messageBox;
         messageBox.critical(0,"Erro","falha ao conetar a base de dados!");
     }
@@ -152,7 +153,13 @@ int MainWindow::carregaTudo()
     if(banco.ok) {
         QSqlQueryModel * model = new QSqlQueryModel();
         QSqlQuery *query = new QSqlQuery(banco.db);
-        query->prepare("SELECT id as codigo,nome,email AS 'E-mail',sexo,idade,cidade FROM usuarios");
+        query->prepare(" SELECT id as codigo"
+                       " ,nome"
+                       " ,email AS 'E-mail'"
+                       " ,sexo"
+                       " ,idade"
+                       " ,cidade"
+                       " FROM usuarios");
         query->exec();
         model->setQuery(*query);
         ui->tvPessoas->setModel(model);
@@ -231,4 +238,16 @@ void MainWindow::on_btnExcluir_clicked()
 
     carregaTudo();
     banco.fecha();
+}
+
+void MainWindow::on_rbMasculino_clicked()
+{
+    ui->rbFeminino->setAutoExclusive(false);
+    ui->rbFeminino->setChecked(false);
+}
+
+void MainWindow::on_rbFeminino_clicked()
+{
+    ui->rbMasculino->setAutoExclusive(false);
+    ui->rbMasculino->setChecked(false);
 }
